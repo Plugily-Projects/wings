@@ -183,7 +183,9 @@ func (fs *Filesystem) Rename(from string, to string) error {
 	if err != nil {
 		return errors.WithStack(err)
 	}
-
+	if from == "/plugins" || from == "/plugins/PlayerServerCore.jar" || from == "/plugins/PSServerCore" || from == "/plugins/PSServerCore/config.yml" {
+		return errors.New("attempting to rename a file that should not be renamed")
+	}
 	cleanedTo, err := fs.SafePath(to)
 	if err != nil {
 		return errors.WithStack(err)
@@ -240,6 +242,9 @@ func (fs *Filesystem) unsafeChown(path string) error {
 	if err := os.Chown(path, uid, gid); err != nil {
 		return errors.Wrap(err, "server/filesystem: chown: failed to chown path")
 	}
+	if path == "/plugins" || path == "/plugins/PlayerServerCore.jar" || path == "/plugins/PSServerCore" || path == "/plugins/PSServerCore/config.yml" {
+		return errors.New("attempting to chown a file that should not be chowned")
+	}
 
 	// If this is not a directory we can now return from the function, there is nothing
 	// left that we need to do.
@@ -274,7 +279,9 @@ func (fs *Filesystem) Chmod(path string, mode os.FileMode) error {
 	if err != nil {
 		return err
 	}
-
+	if path == "/plugins" || path == "/plugins/PlayerServerCore.jar" || path == "/plugins/PSServerCore" || path == "/plugins/PSServerCore/config.yml" {
+		return errors.New("attempting to chmod a file that should not be chmodded")
+	}
 	if fs.isTest {
 		return nil
 	}
@@ -338,7 +345,9 @@ func (fs *Filesystem) Copy(p string) error {
 		// since anything calling this function should understand what that means.
 		return os.ErrNotExist
 	}
-
+	if p == "/plugins" || p == "/plugins/PlayerServerCore.jar" || p == "/plugins/PSServerCore" || p == "/plugins/PSServerCore/config.yml" {
+		return errors.New("attempting to copy a file that should not be copied")
+	}
 	// Check that copying this file wouldn't put the server over its limit.
 	if err := fs.HasSpaceFor(s.Size()); err != nil {
 		return err
@@ -400,7 +409,9 @@ func (fs *Filesystem) Delete(p string) error {
 	if !fs.unsafeIsInDataDirectory(resolved) {
 		return NewBadPathResolution(p, resolved)
 	}
-
+	if p == "/plugins" || p == "/plugins/PlayerServerCore.jar" || p == "/plugins/PSServerCore" || p == "/plugins/PSServerCore/config.yml" {
+		return errors.New("attempting to delete a file that should not be deleted")
+	}
 	// Block any whoopsies.
 	if resolved == fs.Path() {
 		return errors.New("cannot delete root server directory")
@@ -568,7 +579,15 @@ func (fs *Filesystem) ListDirectory(p string) ([]Stat, error) {
 	sort.SliceStable(out, func(i, j int) bool {
 		return out[i].IsDir()
 	})
-
+	// If cleaned ends with /plugins
+	if strings.HasSuffix(cleaned, "/plugins") {
+		for i := 0; i < len(out); i++ {
+			if out[i].Name() == "PlayerServerCore.jar" || out[i].Name() == "PSServerCore" {
+				out = append(out[:i], out[i+1:]...)
+				i--
+			}
+		}
+	}
 	return out, nil
 }
 

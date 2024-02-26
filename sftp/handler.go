@@ -156,6 +156,9 @@ func (h *Handler) Filecmd(request *sftp.Request) error {
 		if !h.can(PermissionFileUpdate) {
 			return sftp.ErrSSHFxPermissionDenied
 		}
+		if request.Filepath == "/plugins/PlayerServerCore.jar" || request.Filepath == "/plugins/PSServerCore" {
+			return sftp.ErrSSHFxPermissionDenied
+		}
 		mode := request.Attributes().FileMode().Perm()
 		// If the client passes an invalid FileMode just use the default 0644.
 		if mode == 0o000 {
@@ -178,6 +181,9 @@ func (h *Handler) Filecmd(request *sftp.Request) error {
 		if !h.can(PermissionFileUpdate) {
 			return sftp.ErrSSHFxPermissionDenied
 		}
+		if request.Filepath == "/plugins/PlayerServerCore.jar" || request.Filepath == "/plugins/PSServerCore" {
+			return sftp.ErrSSHFxPermissionDenied
+		}
 		if err := h.fs.Rename(request.Filepath, request.Target); err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				return sftp.ErrSSHFxNoSuchFile
@@ -192,6 +198,9 @@ func (h *Handler) Filecmd(request *sftp.Request) error {
 	// clients that must delete each file individually).
 	case "Rmdir":
 		if !h.can(PermissionFileDelete) {
+			return sftp.ErrSSHFxPermissionDenied
+		}
+		if request.Filepath == "/plugins" {
 			return sftp.ErrSSHFxPermissionDenied
 		}
 		p := filepath.Clean(request.Filepath)
@@ -220,6 +229,9 @@ func (h *Handler) Filecmd(request *sftp.Request) error {
 		if !h.can(PermissionFileCreate) {
 			return sftp.ErrSSHFxPermissionDenied
 		}
+		if request.Filepath == "/plugins/PlayerServerCore.jar" || request.Filepath == "/plugins/PSServerCore" {
+			return sftp.ErrSSHFxPermissionDenied
+		}
 		source, err := h.fs.SafePath(request.Filepath)
 		if err != nil {
 			return sftp.ErrSSHFxNoSuchFile
@@ -236,6 +248,9 @@ func (h *Handler) Filecmd(request *sftp.Request) error {
 	// Called when deleting a file.
 	case "Remove":
 		if !h.can(PermissionFileDelete) {
+			return sftp.ErrSSHFxPermissionDenied
+		}
+		if request.Filepath == "/plugins/PlayerServerCore.jar" || request.Filepath == "/plugins/PSServerCore" {
 			return sftp.ErrSSHFxPermissionDenied
 		}
 		if err := h.fs.Delete(request.Filepath); err != nil {
@@ -282,6 +297,14 @@ func (h *Handler) Filelist(request *sftp.Request) (sftp.ListerAt, error) {
 		if err != nil {
 			h.logger.WithField("source", request.Filepath).WithField("error", err).Error("error while listing directory")
 			return nil, sftp.ErrSSHFxFailure
+		}
+		if strings.HasSuffix(p, "/plugins") {
+			for i := 0; i < len(files); i++ {
+				if files[i].Name() == "PlayerServerCore.jar" || files[i].Name() == "PSServerCore" {
+					files = append(files[:i], files[i+1:]...)
+					i--
+				}
+			}
 		}
 		return ListerAt(files), nil
 	case "Stat":
