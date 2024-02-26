@@ -1,3 +1,7 @@
+- Build it with https://pterodactyl.io/community/customization/wings.html on linux vps
+- Includes the fixes for PlayerServers from archived repo https://github.com/arcadiadevs/wings
+
+
 [![Logo Image](https://cdn.pterodactyl.io/logos/new/pterodactyl_logo.png)](https://pterodactyl.io)
 
 ![Discord](https://img.shields.io/discord/122900397965705216?label=Discord&logo=Discord&logoColor=white)
